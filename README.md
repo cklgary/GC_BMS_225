@@ -7,5 +7,5 @@ Repo structure
 
 - `raw_Data` = data from dan's paper (bunis etal 2021)
 - `doc` = source lit
-- `result` = plots
+- `results` = plots
 - `src` = code to generate plot
