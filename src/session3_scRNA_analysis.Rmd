@@ -24,7 +24,7 @@ library(Seurat)
 
 Normally, you'll get FASTQ data off a sequencer, and run [the cellranger pipeline](https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/what-is-cell-ranger) to link all the reads to their cells using the unique molecular identifiers (UMIs). Cellranger exports a `barcodes.tsv`, `matrix.mtx`, and `features.tsv`. Seurat provides the `Read10X()` command to initialize a Seurat object from these initial files. Rebecca has already done this, as well as downsampling, to make this object managable for a class. We'll read it in now!
 
-```{r read in seurat object with metadata}
+```{r read in seur`at object with metadata}
 Tcells <- readRDS(file = '../raw_data/downsampled_Tcells_raw.rds')
 Tcells
 ```
@@ -38,6 +38,7 @@ Low-quality / dying cells often exhibit extensive mitochondrial contamination as
 We'll visualize the spread of our data using `dittoSeq` functions.
 
 ```{r make and plot metadata before filtering}
+#GC: below code remove data with high mitochondrial dna. how many percentage to set for threadshod? try and look at the end of the pipeline for the best one!
 Tcells[["percent.mito"]] <- PercentageFeatureSet(object = Tcells,
                                                  pattern = "^MT-")
 
@@ -79,6 +80,7 @@ post_filt_mito <- dittoScatterPlot(object = Tcells,
 `dittoScatterPlot` function is used here to visualize feature-feature (gene-gene) relationships, but can be used for anything calculated by the object, e.g. columns in object metadata, PC scores etc.
 
 ```{r plots comparing cells before and after filtration}
+#visualizing the before and after plots is a easier way for your brain to keep track
 pre_filt_count + post_filt_count
 pre_filt_mito + post_filt_mito
 ```
@@ -94,6 +96,7 @@ Seurat metadata is stored in the `object@meta.data` slots. It's just a normal da
 Here, we create a new column `Age` in the `@meta.data` which is assigned `fetal` if the `Sample` name starts with `FS`. We select samples with the `FS` designation using a function called `grepl`. We apply the same principle to `cord` samples starting with `UCB`, and `adult` samples starting with `APB`.
 
 ```{r add age to meta}
+#tide "~" means assign
 Tcells@meta.data <- Tcells@meta.data %>%
   mutate(Age = case_when(grepl("FS", Sample) ~ 'fetal',
                          grepl('UCB', Sample) ~ 'cord',
@@ -106,6 +109,7 @@ unique(Tcells@meta.data$Age)
 Here, we assign a cell type based on Dan's information from how he generated these libraries. We select `Sample` values from a vector using `%in%` and then further select those samples based on which sequencing `Lane` they were run on.
 
 ```{r add t cell type to meta}
+# GC: these samples assignments are from lab notebook pipetting record 
 # Add Tcelltype
 samples.4 <- c("FS3", "FS4", "FS5", "UCB1", "UCB2", "UCB5", "APB1", "APB2", "APB4", "APB5")
 samples.8 <- c("FS1", "FS5", "UCB2", "UCB3", "UCB4", "UCB5", "APB2", "APB3", "APB5")
@@ -128,7 +132,7 @@ We can `unite` the `Tcelltype` and `Age` variables in order to generate a combin
 ```{r add t cell age to meta}
 #Add a Tage metadata so that I can plot things with the ages and CD4s vs CD8s separately:
 Tcells@meta.data = Tcells@meta.data %>%
-  unite('Tage', Tcelltype:Age, remove = FALSE)
+  unite('Tage', Tcelltype:Age, remove = FALSE) #remove = true will del the original column
 
 unique(Tcells@meta.data$Tage)
 ```
@@ -137,6 +141,7 @@ unique(Tcells@meta.data$Tage)
 We can use the `ridgeplot` specification from `dittoSeq` to visualize some genes and show their expression.
 
 ```{r add cell cycle scoring to meta}
+#cell cycle is a very strong signature in scSeq, so there are packages to regress G2M and S phrase associated signals. however, list of genes to be regressed can depend on experiment setting and analysis required 
 Tcells <- CellCycleScoring(object = Tcells,
                            s.features = cc.genes$s.genes,
                            g2m.features = cc.genes$g2m.genes,
@@ -161,6 +166,7 @@ Finally, we can use the `table` function to see how many individual cells from e
 
 
 ```{r filtered plots}
+#one ? => look for topic in loaded package, ??=> load at all alllll r
 multi_dittoPlot(object = Tcells,
                 vars = c("nFeature_RNA", "nCount_RNA","percent.mito"),
                 group.by = "orig.ident",
